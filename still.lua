@@ -91,10 +91,9 @@ function dynamicpics.receive_fields(pos, formname, fields, sender, lock)
 --			fields.text,
 --			minetest.pos_to_string(pos)
 --		))
-		 
-	  local meta = minetest.get_meta(pos)
-	  meta:set_string("texturename", fields.texturename)	
-      dynamicpics.update(pos) 
+
+
+      dynamicpics.settexture(pos,fields.texturename)
 	end
 end
 
@@ -135,6 +134,11 @@ dynamicpics.model = {
  
 }
 
+dynamicpics.settexture = function(pos, texturename)		 
+	  local meta = minetest.get_meta(pos)
+	  meta:set_string("texturename", texturename)	
+      dynamicpics.update(pos) 
+end
 
 dynamicpics.update = function(pos)
     local meta = minetest.get_meta(pos)
