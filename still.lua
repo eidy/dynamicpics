@@ -5,11 +5,12 @@ minetest.register_node("dynamicpics:picture", {
 	description = "Picture",
 	drawtype = "signlike",
 	tiles = {"wool_white.png"},
-	visual_scale = 3.0,
+	visual_scale = 1.0,
 	inventory_image = "dynamicpics_node.png",
 	wield_image = "dynamicpics_node.png",
 	paramtype = "light",
 	paramtype2 = "wallmounted",
+    stack_max = 1,
 	sunlight_propagates = true,
 	walkable = false,
 	selection_box = {
@@ -28,28 +29,48 @@ minetest.register_node("dynamicpics:picture", {
 	on_punch = function(pos, node, puncher)
 		dynamicpics.update(pos)
 	end,
- 
+    after_place_node = function(pos, placer, itemstack, pointed_thing)      
+        local placemeta = minetest.get_meta(pos)
+        local itemmeta = itemstack:get_metadata()
+        placemeta:set_string("texturename", itemmeta)
+        dynamicpics.update(pos)
+    end,
+    after_dig_node = function(pos, oldnode, oldmetadata, digger)
+        
+        if oldmetadata == nil then return end
 
+        -- Look in inventory for an item without metadata
+        local inv = digger:get_inventory()
+        local mainlist = inv:get_list("main")
+        for i,stack in ipairs(mainlist) do
+            if stack:get_name() == "dynamicpics:picture" and stack:get_metadata() == "" then
+                stack:set_metadata(oldmetadata.fields.texturename)
+                inv:set_stack("main",i,stack)
+                break
+            end
+        end
+
+    end
 })
 
 
-local function set_obj_picture(obj, texturename)
+local function set_obj_picture(obj, texturename, visualscale)
  if obj.textures == nil or #obj.textures < 1 or obj.textures[1] ~= texturename then
 	    obj:set_properties({
 		    textures={texturename},
-		    visual_size = {x=3, y=3},
+		    visual_size = {x=visualscale, y=visualscale},
      })
  end
 
 end
 
 dynamicpics_on_activate = function(self)
-	local meta = minetest.get_meta(self.object:getpos())
+    local pos = self.object:getpos()
+	local meta = minetest.get_meta(pos)
 	local texturename = meta:get_string("texturename")
- 
+    
 	if texturename then
-	 
-		set_obj_picture(self.object,texturename)
+		set_obj_picture(self.object,texturename, minetest.registered_nodes[minetest.get_node(pos).name].visual_scale)
 	end
 end
 
@@ -152,7 +173,7 @@ dynamicpics.update = function(pos)
 			if found then
 				v:remove()
 			else
-				set_obj_picture(v, texturename)
+				set_obj_picture(v, texturename, minetest.registered_nodes[minetest.get_node(pos).name].visual_scale)
 				found = true
 			end
 		end
